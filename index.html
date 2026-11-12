@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор порций роллов</title>
+  <style>
+    :root {
+      --bg-color: #f5f7fa;
+      --card-bg: #ffffff;
+      --text-main: #222a33;
+      --text-secondary: #6b7280;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --error: #ef4444;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Переключение на тёмную тему (опционально, можно убрать) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #111827;
+        --card-bg: #1f2937;
+        --text-main: #f3f4f6;
+        --text-secondary: #9ca3af;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1rem 1.25rem;
+      text-align: center;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    @media (prefers-color-scheme: dark) {
+      header { border-bottom-color: rgba(255,255,255,0.1); }
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 0.75rem 0.875rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    @media (prefers-color-scheme: dark) {
+      input[type="number"] { border-color: #4b5563; }
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .error-message {
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+      display: none; /* скрыто по умолчанию */
+    }
+
+    button {
+      width: 100%;
+      padding: 0.875rem;
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .result {
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      text-align: center;
+    }
+    @media (prefers-color-scheme: dark) {
+      .result { border-top-color: rgba(255,255,255,0.1); }
+    }
+
+    .result h2 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+
+    footer {
+      padding: 1rem 1.25rem;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    @media (prefers-color-scheme: dark) {
+      footer { border-top-color: rgba(255,255,255,0.1); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Калькулятор порций роллов</h1>
+  </header>
+
+  <main>
+    <div class="card">
+      <form id="rollsForm">
+        <div class="form-group">
+          <label for="guests">Количество человек</label>
+          <input type="number" id="guests" name="guests" placeholder="Например: 4" min="0" />
+          <div id="guestsError" class="error-message">Пожалуйста, укажите положительное число гостей.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="rollsPerPerson">Роллов на человека (рекомендуется 3–5)</label>
+          <input type="number" id="rollsPerPerson" name="rollsPerPerson" placeholder="Например: 4" min="0" />
+          <div id="rollsError" class="error-message">Укажите корректное количество роллов на человека.</div>
+        </div>
+
+        <button type="submit">Рассчитать</button>
+      </form>
+
+      <div class="result" id="resultBlock" style="display:none;">
+        <h2 id="totalPortionsText"></h2>
+        <p id="adviceText"></p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2026 Калькулятор порций роллов. Только для информационных целей.
+  </footer>
+
+  <script>
+    const form = document.getElementById('rollsForm');
+    const guestsInput = document.getElementById('guests');
+    const rollsInput = document.getElementById('rollsPerPerson');
+    const guestsError = document.getElementById('guestsError');
+    const rollsError = document.getElementById('rollsError');
+    const resultBlock = document.getElementById('resultBlock');
+    const totalPortionsText = document.getElementById('totalPortionsText');
+    const adviceText = document.getElementById('adviceText');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      // Сброс ошибок
+      guestsError.style.display = 'none';
+      rollsError.style.display = 'none';
+      resultBlock.style.display = 'none';
+
+      const guests = parseFloat(guestsInput.value);
+      const rollsPerPerson = parseFloat(rollsInput.value);
+
+      let hasError = false;
+
+      if (!guestsInput.value.trim() || guests <= 0 || Number.isNaN(guests)) {
+        guestsError.style.display = 'block';
+        hasError = true;
+      }
+
+      if (!rollsInput.value.trim() || rollsPerPerson <= 0 || Number.isNaN(rollsPerPerson)) {
+        rollsError.style.display = 'block';
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      // Расчёт
+      const total = Math.round(guests * rollsPerPerson);
+      const sets = Math.ceil(total / 8); // если в сете 8 штук
+
+      totalPortionsText.textContent = `${total} роллов`;
+      adviceText.textContent = `Это примерно ${sets} сет(а/ов) по 8 штук.`;
+      resultBlock.style.display = 'block';
+    });
+  </script>
+</body>
+</html>
